@@ -1,5 +1,15 @@
-void main() {
-  List<Regra> regras = [Regra(exp: RegExp(r"^[0-9]+[.][0-9]+"), nome: "numero real"),
+import 'dart:io';
+
+void main(List<String> args) async{
+  if(args.length < 1){
+    print("Utilize dart main.dart caminhoEntrada");
+    return;
+  }
+
+  String caminhoEntrada = args[0];
+  String entrada = await lerArquivo(caminhoEntrada);
+
+  List<Regra> regrasCalculadora = [Regra(exp: RegExp(r"^[0-9]+[.][0-9]+"), nome: "numero real"),
    Regra(exp: RegExp(r"^[0-9]+"), nome: "numero"),
    Regra(exp: RegExp(r"^[+]"), nome: "operador de adição"),
    Regra(exp: RegExp(r"^[-]"), nome: "operador de subtração"),
@@ -10,8 +20,8 @@ void main() {
    Regra(exp: RegExp(r"^[(]"), nome: "abre parenteses"),
    ];
    
-  Tokenizador t = Tokenizador(regras: regras);
-  var result = t.analisar("1.2.3 + 3+-*/ 23)");
+  Tokenizador t = Tokenizador(regras: regrasCalculadora);
+  var result = t.analisar(entrada);
 
   for(var k in result.keys){
     print("${k?.nome ?? "erro"}: ${result[k].fold("", (p, n) => p + n.valor + ", ")}");
@@ -24,7 +34,7 @@ class Tokenizador {
   
   Tokenizador({this.regras});
 
-  Map<Regra, List<Token>> analisar(String entrada) {
+  Map<Regra, List<Token>> analisar(String entrada,{ bool imprimirDados = false}) {
     Map<Regra, List<Token>> tokens = Map();
 
     for(Regra r in regras){
@@ -33,11 +43,11 @@ class Tokenizador {
     tokens[null] = <Token>[];
 
     while(!entrada.isEmpty){
-      print("Analisando $entrada");
+      if(imprimirDados) ("Analisando $entrada");
       Token atual;
       for(Regra r in regras){
         var match = r.exp.firstMatch(entrada);
-        print("Match para regra ${r.nome}: ${match?.pattern}");
+        if(imprimirDados) print("Match para regra ${r.nome}: ${match?.pattern}");
         if(match != null && (atual == null || atual.inicio > match.start)){
           atual = Token(regra: r, valor: match.group(0), inicio: match.start, fim: match.end);
         }
@@ -82,3 +92,7 @@ class Regra {
     return "$nome : ${exp.pattern}";
   }
 } 
+
+Future<String> lerArquivo(String caminho) {
+  return new File(caminho).readAsString();
+}
